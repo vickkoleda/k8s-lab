@@ -1,0 +1,10 @@
+- name: Configuring control machine
+  hosts: worker
+  vars_files:
+    - env_variables
+  
+  tasks:
+  
+  - name: Joining to cluster
+    shell: kubeadm join --token {{token}} --discovery-token-unsafe-skip-ca-verification --skip-phases=preflight 192.168.56.224:6443
+    become: yes

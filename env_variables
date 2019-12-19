@@ -1,0 +1,6 @@
+token: abcdef.0123456789abcdef
+master_ip: 192.168.56.224
+pod_url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+dashboard_url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+ingress_controller_url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
+ingress_service_url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
