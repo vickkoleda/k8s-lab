@@ -1,0 +1,57 @@
+---
+- name: Check admin.conf
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: admin_conf_stat
+
+- name: Check controller-manager.conf
+  stat:
+    path: /etc/kubernetes/controller-manager.conf
+  register: controller_manager_stat      
+
+- name: Check kubelet.conf
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_stat  
+
+- name: Check scheduler.conf
+  stat:
+    path: /etc/kubernetes/scheduler.conf
+  register: scheduler_stat  
+
+- name: Check etcd.yaml
+  stat:
+    path: /etc/kubernetes/manifests/etcd.yaml
+  register: etcd_stat  
+
+- name: Check kube-apiserver.yaml
+  stat:
+    path: /etc/kubernetes/manifests/kube-apiserver.yaml
+  register: kube_apiserver_stat
+
+- name: Check kube-controller-manager.yaml
+  stat:
+    path: /etc/kubernetes/manifests/kube-controller-manager.yaml
+  register: kube_controller_manager_stat      
+
+- name: Check kube-scheduler.yaml
+  stat:
+    path: /etc/kubernetes/manifests/kube-scheduler.yaml
+  register: kube_scheduler_stat  
+
+- name: Cluster destruction
+  shell: kubeadm reset -f
+  when: (admin_conf_stat.stat.exists == False) or
+        (controller_manager_stat.stat.exists == False) or
+        (kubelet_stat.stat.exists == False) or
+        (scheduler_stat.stat.exists == False) or
+        (etcd_stat.stat.exists == False) or
+        (kube_apiserver_stat.stat.exists == False) or
+        (kube_controller_manager_stat.stat.exists == False) or
+        (kube_scheduler_stat.stat.exists == False)
+  register: reset_cluster
+
+- name: Cluster initialization
+  shell: kubeadm init --pod-network-cidr {{pod_network_cidr}} --apiserver-advertise-address {{ansible_eth1.ipv4.address}} --token {{token}}
+  when: reset_cluster.changed
+  notify: Copy admin config to control-machine

@@ -1,0 +1,8 @@
+---
+ingress_version: "nginx-0.26.1"
+ingress_patch:
+  spec:
+    externalIPs:
+      - "{{ hostvars[groups['masters'][0]]['ansible_eth1']['ipv4']['address'] }}"
+
+masterip: False

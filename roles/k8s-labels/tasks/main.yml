@@ -1,0 +1,10 @@
+---
+- name: Untain master isolation
+  shell: kubectl taint nodes --all node-role.kubernetes.io/master-
+  changed_when: no
+  ignore_errors: yes
+
+- name: Add node label worker
+  shell: kubectl label nodes --all node-role.kubernetes.io/worker=""
+  changed_when: no
+  ignore_errors: yes

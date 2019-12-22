@@ -1,0 +1,7 @@
+---
+- name: Join node to cluster
+  shell: kubeadm join --token {{token}} \
+                      {{ hostvars[groups['masters'][0]]['ansible_eth1']['ipv4']['address'] }}:6443 \
+                      --discovery-token-unsafe-skip-ca-verification \
+                      --skip-phases=preflight 
+  changed_when: no

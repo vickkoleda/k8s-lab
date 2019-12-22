@@ -1,0 +1,28 @@
+---
+- name: Restart Docker
+  service:
+    name: docker
+    state: restarted
+
+- name: Check if fact dir exist
+  file: 
+    path: /etc/ansible/facts.d
+    state: directory
+  become: yes
+  listen: save docker fact
+  
+- name: Get docker version
+  shell: "docker -v | cut -d ' ' -f 3 | cut -d ',' -f 1"
+  register: docker_version
+  changed_when: no
+  listen: save docker fact
+
+- name: Create Docker fact
+  copy:
+    content: |
+      {
+        "version": "{{docker_version.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/docker.fact
+  become: yes
+  listen: save docker fact

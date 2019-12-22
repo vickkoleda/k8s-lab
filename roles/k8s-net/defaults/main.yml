@@ -1,0 +1,15 @@
+---
+#Patching a Pod network
+flannel_patch:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kube-flannel
+                args:
+                  - '--ip-masq'
+                  - '--kube-subnet-mgr'
+                  - '--iface=eth1'
+
+flannel_version: "master"
+

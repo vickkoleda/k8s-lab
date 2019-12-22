@@ -1,0 +1,36 @@
+---
+- name: Checking if ingress controller already exist
+  shell: kubectl get deploy nginx-ingress-controller -n ingress-nginx
+  ignore_errors: yes
+  register: ingress_deploy
+  changed_when: no
+
+- name: Deploying ingress controller
+  shell: kubectl apply -f {{ingress_url}}
+  when: ingress_deploy.stdout == ""
+  notify: save ingress fact
+
+- name: Checking if ingress controller service already exist
+  shell: kubectl get svc ingress-nginx -n ingress-nginx
+  ignore_errors: yes
+  register: ingress_service_deploy
+  changed_when: no
+
+- name: Deploying ingress controller service
+  shell: kubectl apply -f {{ingress_service_url}}
+  when: ingress_deploy.stdout == ""
+  notify: save ingress service lb fact
+
+- name: Checking if metallb already exist
+  shell: kubectl get deploy controller -n metallb-system
+  ignore_errors: yes
+  register: metallb
+  changed_when: no
+
+- name: Assigning ingress to Master IP
+  shell: kubectl patch svc ingress-nginx -n ingress-nginx --patch='{{ingress_patch | to_json}}' 
+  changed_when: no
+  when: (metallb.stdout == "") or
+        (masterip)
+  notify: save ingress service externalip fact
+

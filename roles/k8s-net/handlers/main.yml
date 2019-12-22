@@ -1,0 +1,27 @@
+---
+- name: Restart a Pod network
+  shell: kubectl rollout restart daemonsets -n kube-system kube-flannel-ds-amd64
+  changed_when: no
+
+- name: Check if fact dir exist
+  file: 
+    path: /etc/ansible/facts.d
+    state: directory
+  become: yes
+  listen: save flannel fact
+  
+- name: Get flannel image
+  shell: "kubectl get daemonsets kube-flannel-ds-amd64 -n kube-system -o jsonpath={.spec.template.spec.containers[0].image}"
+  register: flannel_image
+  changed_when: no
+  listen: save flannel fact
+
+- name: Create flannel fact
+  copy:
+    content: |
+      {
+        "image": "{{flannel_image.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_flannel.fact
+  become: yes
+  listen: save flannel fact

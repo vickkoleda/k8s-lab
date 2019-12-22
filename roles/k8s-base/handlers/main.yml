@@ -1,0 +1,42 @@
+---
+- name: Check if fact dir exist
+  file: 
+    path: /etc/ansible/facts.d
+    state: directory
+  become: yes
+  listen: save kubernetes fact
+  
+- name: Get kubeadmin version
+  shell: "kubeadm version -o yaml | grep gitVersion | sed 's/.*: v//'"
+  register: kubeadm_version
+  changed_when: no
+  listen: save kubernetes fact
+
+- name: Get kubelet version
+  shell: "kubelet --version | awk '{print $2}' | sed 's/v//'"
+  register: kubelet_version
+  changed_when: no
+  listen: save kubernetes fact
+
+- name: Create kubeadm fact
+  copy:
+    content: |
+      {
+        "version": "{{kubeadm_version.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubeadm.fact
+  become: yes
+  listen: save kubernetes fact
+
+- name: Create kubelet fact
+  copy:
+    content: |
+      {
+        "version": "{{kubelet_version.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubelet.fact
+  become: yes
+  listen: save kubernetes fact
+
+
+
