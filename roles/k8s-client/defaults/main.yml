@@ -1,0 +1,4 @@
+---
+packages:
+  - kubectl
+  - bash-completion

@@ -1,0 +1,57 @@
+---
+- stat: path=/etc/yum.repos.d/kubernetes.repo
+  register: kuberepo
+  become: yes
+
+- name: Create Kubernetes repo file on client if not exist 
+  file: 
+    path=/etc/yum.repos.d/kubernetes.repo
+    owner=root
+    group=root
+    mode=0644
+    state={{ "file" if  kuberepo.stat.exists else "touch"}}
+  become: yes
+
+- name: Adding repository details in Kubernetes repo file.
+  blockinfile:
+    path: /etc/yum.repos.d/kubernetes.repo
+    block: |
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      enabled=1
+      gpgcheck=1
+      repo_gpgcheck=1
+      gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+  become: yes
+
+- name: Instal kubernetes tools on client
+  yum:
+    name: "{{ packages }}"
+    state: present
+  become: yes
+
+- name: create .kube directory for user
+  file:
+    path: "{{ansible_user_dir}}/.kube"
+    state: directory
+    mode: 0755
+  
+- name: copy k8s conf for user on master node
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ansible_user_dir}}/.kube/config"
+    owner: "{{ansible_user_uid}}"
+    group: "{{ansible_user_gid}}"
+    remote_src: true
+  become: yes
+  when: ansible_hostname == "master"
+
+- name: copy k8s conf for user on control-machine
+  copy:
+    src: "{{cm_config_path}}"
+    dest: "{{ansible_user_dir}}/.kube/config"
+    owner: "{{ansible_user_uid}}"
+    group: "{{ansible_user_gid}}"
+  when: ansible_hostname != "master"
+

@@ -1,0 +1,51 @@
+---
+- name: Checking if dashboard already exist
+  shell: kubectl get deploy kubernetes-dashboard -n kubernetes-dashboard
+  ignore_errors: yes
+  register: dashboard_deploy
+  changed_when: no
+
+- name: Deploying Dashboard
+  shell: kubectl apply -f {{dashboard_url}}
+  when: dashboard_deploy.stdout == ""
+  notify: save dashboard fact
+
+- name: Checking if Dashboard Service Account already exist
+  shell: kubectl get serviceaccount {{dashboard_user}} --namespace kubernetes-dashboard
+  ignore_errors: yes
+  register: dashboard_account
+  changed_when: no
+
+- name: Create Dashboard Service Account
+  shell: kubectl create serviceaccount {{dashboard_user}} --namespace kubernetes-dashboard
+  when: dashboard_account.stdout == ""
+  notify: save dashboard user fact
+
+- name: Checking if Dashboard Cluster Role Binding already exist
+  shell: kubectl get clusterrolebindings -n kubernetes-dashboard {{dashboard_user}}
+  ignore_errors: yes
+  register: dashboard_crb
+  changed_when: no
+
+- name: Create Dashboard Service Account Cluster role binding
+  shell: kubectl create clusterrolebinding {{dashboard_user}} --namespace kubernetes-dashboard --clusterrole cluster-admin --serviceaccount kubernetes-dashboard:{{dashboard_user}}
+  when: dashboard_crb.stdout == ""
+
+- name: Exposing Dashboard to Nodeport 32500
+  shell: |
+    kubectl patch svc -n kubernetes-dashboard kubernetes-dashboard --patch='{{dashboard_patch | to_json}}'
+  changed_when: no
+
+- name: Getting Service Account token
+  shell: |
+    kubectl -n kubernetes-dashboard describe secret \
+      $(kubectl -n kubernetes-dashboard get secret | grep {{dashboard_user}} | awk '{print $1}') | grep ^token | awk '{print $2}'
+  register: user_token
+  changed_when: no
+
+- name: Storing token
+  local_action: copy content={{user_token.stdout}} dest=dashboard_token
+    
+
+  
+

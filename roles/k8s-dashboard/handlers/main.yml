@@ -1,0 +1,34 @@
+---
+# handlers file for k8s-dashboard
+- name: Check if fact dir exist
+  file: 
+    path: /etc/ansible/facts.d
+    state: directory
+  become: yes
+  listen: save dashboard fact
+  
+- name: Get dashboard image
+  shell: "kubectl get deploy kubernetes-dashboard -n kubernetes-dashboard -o jsonpath={.spec.template.spec.containers[0].image}"
+  register: dashboard_image
+  changed_when: no
+  listen: save dashboard fact
+
+- name: Create dashboard fact
+  copy:
+    content: |
+      {
+        "image": "{{dashboard_image.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_dashboard.fact
+  become: yes
+  listen: save dashboard fact
+
+- name: Create dashboard fact
+  copy:
+    content: |
+      {
+        "username": "{{dashboard_user}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_dashboard_user.fact
+  become: yes
+  listen: save dashboard user fact

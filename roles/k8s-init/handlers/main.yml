@@ -1,0 +1,6 @@
+---
+- name: Copy admin config to control-machine
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{cm_config_path}}"
+    flat: yes

@@ -1,0 +1,5 @@
+---
+label_worker:
+      metadata:
+        labels:
+          node-role.kubernetes.io/worker: ""

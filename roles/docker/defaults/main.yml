@@ -1,0 +1,5 @@
+---
+# docker daemon.conf options
+daemon_conf:
+  exec-opts: 
+    - native.cgroupdriver=systemd

@@ -1,0 +1,57 @@
+---
+- name: Check if fact dir exist
+  file: 
+    path: /etc/ansible/facts.d
+    state: directory
+  become: yes
+  listen: save ingress fact
+  
+- name: Get ingress image
+  shell: "kubectl get deploy nginx-ingress-controller -n ingress-nginx -o jsonpath={.spec.template.spec.containers[0].image}"
+  register: ingress_image
+  changed_when: no
+  listen: save ingress fact
+
+- name: Create ingress fact
+  copy:
+    content: |
+      {
+        "image": "{{ingress_image.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_ingress.fact
+  become: yes
+  listen: save ingress fact
+
+- name: Get ingress service loadbalancer ip
+  shell: "kubectl describe svc -n ingress-nginx | grep 'LoadBalancer Ingress' | awk '{print $3}'"
+  register: ingress_lb_ip
+  changed_when: no
+  listen: save ingress service lb fact
+
+- name: Create ingress service loadbalancer fact
+  copy:
+    content: |
+      {
+        "externalIP": "{{ingress_lb_ip.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_ingress_loadbalancer_ip.fact
+  become: yes
+  listen: save ingress service lb fact
+
+- name: Get ingress service external ip
+  shell: "kubectl describe svc -n ingress-nginx | grep 'External IPs' | awk '{print $3}'"
+  register: ingress_ext_ip
+  changed_when: no
+  listen: save ingress service externalip fact
+
+- name: Create ingress service external ip fact
+  copy:
+    content: |
+      {
+        "externalIP": "{{ingress_ext_ip.stdout}}"
+      }
+    dest: /etc/ansible/facts.d/kubernetes_ingress_external_ip.fact
+  become: yes
+  listen: save ingress service externalip fact
+
+

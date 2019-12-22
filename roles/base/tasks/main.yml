@@ -1,0 +1,25 @@
+---
+- name: Install requirements
+  yum:
+    name: "{{ packages }}"
+    state: present
+
+- name: Start Ntpd service
+  service:
+    name: ntpd
+    state: started
+    enabled: yes
+
+- name: Disable SELinux
+  selinux:
+    state: disabled
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Disable swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0

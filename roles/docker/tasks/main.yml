@@ -1,0 +1,43 @@
+---
+- name: Add Docker repo
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docer-ce.repo
+
+- name: Install docker-ce
+  yum:
+    name: docker-ce
+    state: present
+    enablerepo: docker-ce-edge
+  notify: save docker fact
+
+- name: Add user vagrant to docker group
+  user:
+    name: vagrant
+    groups: docker
+    append: yes    
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Copy a Docker daemon.json
+  copy:
+    content: "{{ daemon_conf | to_nice_json}}"
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Docker
+
+- name: Adding setting to enable passing bridged traffic to iptables' chain
+  sysctl:
+    name: "{{item}}"
+    value: 1
+    sysctl_file: /etc/sysctl.d/docker.conf
+    reload: yes
+  loop:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
