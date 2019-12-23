@@ -4,7 +4,5 @@ packages:
 - epel-release
 - wget 
 - ntp 
-- jq 
 - net-tools
 - bind-utils 
-- moreutils

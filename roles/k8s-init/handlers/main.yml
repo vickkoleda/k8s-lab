@@ -4,3 +4,4 @@
     src: /etc/kubernetes/admin.conf
     dest: "{{cm_config_path}}"
     flat: yes
+  listen: copy admin config

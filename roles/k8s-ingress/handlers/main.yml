@@ -32,7 +32,7 @@
   copy:
     content: |
       {
-        "externalIP": "{{ingress_lb_ip.stdout}}"
+        "loadBalancerIP": "{{ingress_lb_ip.stdout}}"
       }
     dest: /etc/ansible/facts.d/kubernetes_ingress_loadbalancer_ip.fact
   become: yes
