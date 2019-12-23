@@ -3,6 +3,7 @@
   service:
     name: docker
     state: restarted
+  become: yes
 
 - name: Check if fact dir exist
   file: 

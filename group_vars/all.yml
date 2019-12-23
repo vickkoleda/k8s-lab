@@ -1,3 +1,7 @@
 pod_network_cidr: "10.244.0.0/16"
 metallb_network_cidr: "192.168.56.240/28"
-cm_config_path: "/tmp/admin.conf"
+cm_config_path: "admin.conf"
+vagrant_env: False
+azure_env: True
+token: abcdef.0123456789abcdef
+name_prefix: kuber-lab

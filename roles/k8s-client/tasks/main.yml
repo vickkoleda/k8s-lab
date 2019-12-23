@@ -45,7 +45,6 @@
     group: "{{ansible_user_gid}}"
     remote_src: true
   become: yes
-  when: ansible_hostname == "master"
 
 - name: copy k8s conf for user on control-machine
   copy:
@@ -53,5 +52,5 @@
     dest: "{{ansible_user_dir}}/.kube/config"
     owner: "{{ansible_user_uid}}"
     group: "{{ansible_user_gid}}"
-  when: ansible_hostname != "master"
+  when: vagrant_env
 

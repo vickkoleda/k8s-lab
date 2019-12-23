@@ -1,0 +1,31 @@
+- name: Initial Deployment
+  hosts: masters:workers
+  roles:
+  - k8s-base
+
+- name: Cluster initialization
+  hosts: masters
+  become: yes
+  roles:
+  - k8s-init
+
+- name: Prepare Kubectl client
+  hosts: masters
+  roles:
+  - k8s-client
+
+- name: Deploy network
+  hosts: masters
+  roles:
+  - k8s-net
+
+- name: Join nodes
+  hosts: workers
+  become: yes
+  roles:
+  - k8s-worker
+
+- name: Deploy infrastructure
+  hosts: masters
+  roles:
+  - k8s-labels

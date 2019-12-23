@@ -3,23 +3,27 @@
   yum:
     name: "{{ packages }}"
     state: present
+  become: yes
 
 - name: Start Ntpd service
   service:
     name: ntpd
     state: started
-    enabled: yes
+  become: yes
 
 - name: Disable SELinux
   selinux:
     state: disabled
+  become: yes
 
 - name: Remove swapfile from /etc/fstab
   mount:
     name: swap
     fstype: swap
     state: absent
+  become: yes
 
 - name: Disable swap
   command: swapoff -a
   when: ansible_swaptotal_mb > 0
+  become: yes

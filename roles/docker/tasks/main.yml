@@ -3,6 +3,7 @@
   get_url:
     url: https://download.docker.com/linux/centos/docker-ce.repo
     dest: /etc/yum.repos.d/docer-ce.repo
+  become: yes
 
 - name: Install docker-ce
   yum:
@@ -10,18 +11,21 @@
     state: present
     enablerepo: docker-ce-edge
   notify: save docker fact
+  become: yes
 
-- name: Add user vagrant to docker group
+- name: Add user to docker group
   user:
-    name: vagrant
+    name: "{{ansible_user_id}}"
     groups: docker
-    append: yes    
+    append: yes 
+  become: yes
 
 - name: Start Docker service
   service:
     name: docker
     state: started
     enabled: yes
+  become: yes
 
 - name: Copy a Docker daemon.json
   copy:
@@ -31,6 +35,7 @@
     group: root
     mode: '0644'
   notify: Restart Docker
+  become: yes
 
 - name: Adding setting to enable passing bridged traffic to iptables' chain
   sysctl:
@@ -41,3 +46,5 @@
   loop:
     - net.bridge.bridge-nf-call-iptables
     - net.bridge.bridge-nf-call-ip6tables
+  when: vagrant_env
+  become: yes
