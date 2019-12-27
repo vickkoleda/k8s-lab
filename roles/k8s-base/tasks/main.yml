@@ -33,14 +33,6 @@
   notify: save kubernetes fact
   become: yes
 
-- name: Add fix for Vagrant
-  lineinfile:
-    path: /etc/sysconfig/kubelet
-    regexp: ^KUBELET_EXTRA_ARGS=
-    line: KUBELET_EXTRA_ARGS=--node-ip={{ansible_eth1.ipv4.address}}
-  when: vagrant_env
-  become: yes
-
 - name: Enable Kubelet service
   service:
     name: kubelet

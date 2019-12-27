@@ -36,15 +36,3 @@
     mode: '0644'
   notify: Restart Docker
   become: yes
-
-- name: Adding setting to enable passing bridged traffic to iptables' chain
-  sysctl:
-    name: "{{item}}"
-    value: 1
-    sysctl_file: /etc/sysctl.d/docker.conf
-    reload: yes
-  loop:
-    - net.bridge.bridge-nf-call-iptables
-    - net.bridge.bridge-nf-call-ip6tables
-  when: vagrant_env
-  become: yes

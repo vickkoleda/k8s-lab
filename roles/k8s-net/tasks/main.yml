@@ -9,9 +9,3 @@
   shell: kubectl apply -f {{pod_url}}
   when: flannel_daemonset.stdout == ""
   notify: save flannel fact
-
-- name: Patching a Pod network
-  shell: kubectl patch daemonsets kube-flannel-ds-amd64 -n kube-system --patch='{{flannel_patch | to_json}}' 
-  changed_when: no
-  notify: Restart a Pod network
-  when: vagrant_env

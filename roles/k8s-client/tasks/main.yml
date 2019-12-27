@@ -45,12 +45,3 @@
     group: "{{ansible_user_gid}}"
     remote_src: true
   become: yes
-
-- name: copy k8s conf for user on control-machine
-  copy:
-    src: "{{cm_config_path}}"
-    dest: "{{ansible_user_dir}}/.kube/config"
-    owner: "{{ansible_user_uid}}"
-    group: "{{ansible_user_gid}}"
-  when: vagrant_env
-

@@ -2,6 +2,6 @@
 - name: Copy admin config to control-machine
   fetch:
     src: /etc/kubernetes/admin.conf
-    dest: "{{cm_config_path}}"
+    dest: "admin.conf"
     flat: yes
   listen: copy admin config

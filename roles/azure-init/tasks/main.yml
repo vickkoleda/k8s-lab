@@ -1,0 +1,122 @@
+---
+- name: Create RG
+  azure_rm_resourcegroup:
+    name: "{{rgname}}"
+    location: "{{location}}"
+    state: present
+    tags:
+      author: "{{author}}"
+  tags:
+  - deploy_azure
+
+- name: Create SA
+  azure_rm_storageaccount:
+    resource_group: "{{rgname}}"
+    name: "{{saname}}"
+    type: Standard_LRS
+    state: present
+    tags:
+      author: "{{author}}"
+  tags:
+  - deploy_azure
+
+- name: Create VNet
+  azure_rm_virtualnetwork:
+    resource_group: "{{rgname}}"
+    name: "{{vnetname}}"
+    address_prefixes: "{{vnet_cidr}}"
+    state: present
+    tags:
+      author: "{{author}}"
+  tags:
+  - deploy_azure
+
+- name: Create SNet
+  azure_rm_subnet:
+    resource_group: "{{rgname}}"
+    name: "{{snetname}}"
+    address_prefix: "{{snet_cidr}}"
+    virtual_network: "{{vnetname}}"
+    state: present
+  tags:
+  - deploy_azure
+
+- name: Create PIP
+  azure_rm_publicipaddress:
+    resource_group: "{{rgname}}"
+    allocation_method: Static
+    name: "{{pipname}}-{{'%02d' | format(item|int)}}"
+    domain_name: "{{vmname}}-{{'%02d' | format(item|int)}}"
+    state: present
+    tags:
+      author: "{{author}}"
+  with_sequence: count="{{vm_count}}"
+  register: azure_pip_deploy
+  tags:
+  - deploy_azure
+
+- name: Create NSG
+  azure_rm_securitygroup:
+    resource_group: "{{rgname}}"
+    name: "{{nsgname}}"
+    state: present
+    rules:
+      - name: 'Allow_SSH_From_Internet_IP'
+        protocol: 'Tcp'
+        destination_port_range: 22
+        access: Allow
+        priority: 105
+        direction: Inbound
+      - name: 'Kubernetes_API'
+        protocol: 'Tcp'
+        destination_port_range: 6443
+        access: Allow
+        priority: 110
+        direction: Inbound
+    tags:
+      author: "{{author}}"
+  tags:
+  - deploy_azure
+
+- name: Create NIC
+  azure_rm_networkinterface:
+    resource_group: "{{rgname}}"
+    name: "{{nicname}}-{{'%02d' | format(item|int)}}"
+    state: present
+    virtual_network: "{{vnetname}}"
+    subnet: "{{snetname}}"
+    public_ip_name: "{{pipname}}-{{'%02d' | format(item|int)}}"
+    security_group: "{{nsgname}}"
+    tags:
+      author: "{{author}}"
+  with_sequence: count="{{vm_count}}"
+  tags:
+  - deploy_azure
+
+- name: Create a VM with managed disk
+  azure_rm_virtualmachine:
+    resource_group: "{{rgname}}"
+    name: "{{vmname}}-{{'%02d' | format(item|int)}}"
+    state: present
+    managed_disk_type: "{{managed_disk_type}}"
+    admin_username: "{{admin_username}}"
+    ssh_password_enabled: false
+    ssh_public_keys:
+      - path: "/home/{{admin_username}}/.ssh/authorized_keys"
+        key_data: "{{lookup('file', 'ssh-keys/id_rsa.pub') }}"
+    network_interfaces: "{{nicname}}-{{'%02d' | format(item|int)}}"
+    image:
+      offer: CentOS
+      publisher: OpenLogic
+      sku: '7.5'
+      version: latest
+    vm_size: "{{vm_size}}"
+  with_sequence: count="{{vm_count}}"
+  register: azure_vm_deploy
+  tags:
+  - deploy_azure
+
+- debug: var=azure_vm_deploy
+  # tags:
+  # - never
+  # - debug
