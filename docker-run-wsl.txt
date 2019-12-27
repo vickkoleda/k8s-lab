@@ -1,0 +1,1 @@
+alias ap='docker run -it --rm --env-file <(env|grep AZURE|cut -f1 -d=) -v $(pwd):$(pwd) -v $(pwd)/ssh-keys:/root/.ssh  -w $(pwd) ansible-az-image ansible-playbook'

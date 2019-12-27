@@ -1,169 +1,19 @@
-- name: "Create Azure resources"
-  connection: local
+- name: Initial Azure Resources deployment
   hosts: localhost
-  vars_prompt:
-    - name: "location"
-      prompt: "Choose region to deploy VMs"
-      private: no
-      default: "northeurope"
-    - name: "instances_number"
-      prompt: "Choose a number of virtual machines to create"
-      private: no
-      default: 2
-    - name: "vm_size"
-      prompt: "Choose a size for azure virtual machines"
-      private: no
-      default: "Standard_B2s"
-    - name: "managed_disk_type"
-      prompt: "Choose a type for azure virtual disks"
-      private: no
-      default: "Standard_LRS"
-    - name: "admin_username"
-      prompt: "Choose an admin username"
-      private: no
-      default: "ansible"
-    - name: "vnet_cidr"
-      prompt: "Give a network CIDR for virtual network (large)"
-      private: no
-      default: "10.10.0.0/16"
-    - name: "snet_cidr"
-      prompt: "Give a subnet of that network"
-      private: no
-      default: "10.10.0.0/24"
+  roles:
+  - azure-init
 
-  vars:
-    author: Viktar_Kaliada
-    #random_suffix: "{{100|random|hash('md5')}}"
-    
   tasks:
-  - name: Create RG
-    azure_rm_resourcegroup:
-      name: "{{name_prefix}}-rg"
-      location: "{{location}}"
-      state: present
-      tags:
-        author: "{{author}}"
-    tags:
-    - deploy_azure
-  
-  - name: Create SA
-    azure_rm_storageaccount:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{'st' ~ name_prefix | regex_replace ('-')}}"
-      type: Standard_LRS
-      state: present
-      tags:
-        author: "{{author}}"
-    tags:
-    - deploy_azure
-
-  - name: Create VNet
-    azure_rm_virtualnetwork:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{name_prefix}}-vnet"
-      address_prefixes: "{{vnet_cidr}}"
-      state: present
-      tags:
-        author: "{{author}}"
-    tags:
-    - deploy_azure
-
-  - name: Create SNet
-    azure_rm_subnet:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{name_prefix}}-snet"
-      address_prefix: "{{snet_cidr}}"
-      virtual_network: "{{name_prefix}}-vnet"
-      state: present
-    tags:
-    - deploy_azure
-
-  - name: Create PIP
-    azure_rm_publicipaddress:
-      resource_group: "{{name_prefix}}-rg"
-      allocation_method: Static
-      name: "{{name_prefix}}-pip-{{'%02d' | format(item|int)}}"
-      domain_name: "{{name_prefix}}-vm-{{'%02d' | format(item|int)}}"
-      state: present
-      tags:
-        author: "{{author}}"
-    with_sequence: count="{{instances_number}}"
-    tags:
-    - deploy_azure
-
-  - name: Create NSG
-    azure_rm_securitygroup:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{name_prefix}}-nsg"
-      state: present
-      rules:
-        - name: 'Allow_SSH_From_Internet_IP'
-          protocol: 'Tcp'
-          destination_port_range: 22
-          access: Allow
-          priority: 105
-          direction: Inbound
-        - name: 'Kubernetes_API'
-          protocol: 'Tcp'
-          destination_port_range: 6443
-          access: Allow
-          priority: 110
-          direction: Inbound
-      tags:
-        author: "{{author}}"
-    tags:
-    - deploy_azure
-
-  - name: Create NIC
-    azure_rm_networkinterface:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{name_prefix}}-nic-{{'%02d' | format(item|int)}}"
-      virtual_network: "{{name_prefix}}-vnet"
-      subnet: "{{name_prefix}}-snet"
-      public_ip_name: "{{name_prefix}}-pip-{{'%02d' | format(item|int)}}"
-      security_group: "{{name_prefix}}-nsg"
-      tags:
-        author: "{{author}}"
-    with_sequence: count="{{instances_number}}"
-    tags:
-    - deploy_azure
-
-  - name: Create a VM with managed disk
-    azure_rm_virtualmachine:
-      resource_group: "{{name_prefix}}-rg"
-      name: "{{name_prefix}}-vm-{{'%02d' | format(item|int)}}"
-      managed_disk_type: "{{managed_disk_type}}"
-      admin_username: "{{admin_username}}"
-      ssh_password_enabled: false
-      ssh_public_keys:
-        - path: "/home/{{admin_username}}/.ssh/authorized_keys"
-          key_data: "{{lookup('file', 'id_rsa.pub') }}"
-      network_interfaces: "{{name_prefix}}-nic-{{'%02d' | format(item|int)}}"
-      image:
-        offer: CentOS
-        publisher: OpenLogic
-        sku: '7.5'
-        version: latest
-      vm_size: "{{vm_size}}"
-    with_sequence: count="{{instances_number}}"
-    register: azure_vm
-    tags:
-    - deploy_azure
-
-  - debug: var=azure_vm
-    tags:
-    - never
-    - debug
-
   - add_host:
       hostname: "{{item.ansible_facts.azure_vm.name}}"
       ansible_host: "{{item.ansible_facts.azure_vm.properties.networkProfile.networkInterfaces[0].properties.ipConfigurations[0].properties.publicIPAddress.properties.ipAddress}}"
       ansible_connection: paramiko
       ansible_user: "{{admin_username}}"
+      external_ip: "{{azure_pip_deploy.results[0].state.ip_address}}"
       groups:
       - masters
     with_items:
-    - "{{azure_vm.results[0]}}"
+    - "{{azure_vm_deploy.results[0]}}"
     loop_control: 
       label: "{{item.ansible_facts.azure_vm.name}}"
     changed_when: no
@@ -176,22 +26,52 @@
       groups:
       - workers
     with_items:
-    - "{{azure_vm.results[1:]}}"
+    - "{{azure_vm_deploy.results[1:]}}"
     loop_control: 
       label: "{{item.ansible_facts.azure_vm.name}}"
     changed_when: no
 
   - debug: var=groups['masters']
-    tags:
-    - never
-    - debug
+    # tags:
+    # - never
+    # - debug
 
   - debug: var=groups['workers']
-    tags:
-    - never
-    - debug
+    # tags:
+    # - never
+    # - debug
 
-- import_playbook: k8s.yml 
+- name: Initial Deployment
+  hosts: masters:workers
+  roles:
+  - k8s-base
+
+- name: Cluster initialization
+  hosts: masters
+  become: yes
+  roles:
+  - k8s-init
+
+- name: Prepare Kubectl client
+  hosts: masters
+  roles:
+  - k8s-client
+
+- name: Deploy network
+  hosts: masters
+  roles:
+  - k8s-net
+
+- name: Join nodes
+  hosts: workers
+  become: yes
+  roles:
+  - k8s-worker
+
+- name: Deploy infrastructure
+  hosts: masters
+  roles:
+  - k8s-labels
 
 - name: Upload admin.conf to Storage Account
   hosts: localhost
@@ -204,25 +84,3 @@
       blob: admin.conf
       src: admin.conf
       public_access: container
-
-- name: Delete Azure Resources
-  hosts: localhost
-  tasks:
-  - name: Delete a resource group
-    azure_rm_resourcegroup:
-      name: "{{name_prefix}}-rg"
-      force_delete_nonempty: yes
-      state: absent
-    tags:
-    - delete_azure
-
-  
-
-
-
-
-
-
-      
-    
-

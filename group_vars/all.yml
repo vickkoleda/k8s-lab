@@ -1,7 +1,21 @@
+#Azure init
+location: "northeurope"
+vm_count: 2
+vm_size: "Standard_B2s"
+managed_disk_type: "Standard_LRS"
+admin_username: "ansible"
+vnet_cidr: "10.10.0.0/16"
+snet_cidr: "10.10.0.0/24"
+author: Viktar_Kaliada
+name_prefix: kuber-test
+
+#Kuber init
 pod_network_cidr: "10.244.0.0/16"
+token: abcdef.0123456789abcdef
+
 metallb_network_cidr: "192.168.56.240/28"
 cm_config_path: "admin.conf"
-vagrant_env: False
-azure_env: True
-token: abcdef.0123456789abcdef
-name_prefix: kuber-lab
+
+
+
+

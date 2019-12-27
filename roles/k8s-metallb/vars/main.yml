@@ -1,2 +1,0 @@
----
-metallb_url: "https://raw.githubusercontent.com/google/metallb/{{metallb_version}}/manifests/metallb.yaml"

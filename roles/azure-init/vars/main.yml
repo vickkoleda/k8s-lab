@@ -1,0 +1,9 @@
+---
+rgname: "{{name_prefix}}-rg"
+saname: "{{'st' ~ name_prefix | regex_replace ('-')}}"
+vnetname: "{{name_prefix}}-vnet"
+snetname: "{{name_prefix}}-snet"
+pipname: "{{name_prefix}}-pip"
+nsgname: "{{name_prefix}}-nsg"
+nicname: "{{name_prefix}}-nic"
+vmname: "{{name_prefix}}-vm"
